@@ -5,3 +5,4 @@ databases[aiosqlite]
 # databases[asyncpg] # postgress
 python-dotenv
 pydantic-settings
+rich
