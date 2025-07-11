@@ -21,6 +21,13 @@ class EmailObfuscationFilter(logging.Filter):
             record.email = obfuscated(record.email, self.obfuscated_length)
         return True
 
+
+handlers = ["default", "rotating_file"]
+if config.ENV_STATE == "prod":
+    handlers = ["default", "rotating_file", "logtail"]
+
+
+
 def configure_logging() -> None:
     dictConfig(
         {
@@ -71,10 +78,18 @@ def configure_logging() -> None:
                     "backupCount": 3,
                     "encoding": "utf8",
                 },
+                "logtail": {
+                    # https://betterstack.com/docs/logs/python/
+                    "class": "logtail.LogtailHandler",
+                    "level": "DEBUG",
+                    "formatter": "console",
+                    "filters": ["correlation_id", "email_obfuscation"],
+                    "source_token": config.LOGTAIL_API_KEY,  # gets passed to LogtailHandler constructor as kwargs
+                },
             },
             "loggers": {
                 "social_media_api": {
-                    "handlers": ["default"],
+                    "handlers": handlers,
                     "level": "DEBUG" if isinstance(config, DevConfig) else "INFO",
                     "propagate": False,
                 },
