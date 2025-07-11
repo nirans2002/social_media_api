@@ -22,8 +22,8 @@ def configure_logging() -> None:
                     "format": "(%(correlation_id)s) %(name)s:%(lineno)d - %(message)s",
                 },
                 "file": {
-                    "class": "logging.Formatter",
-                    # "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                    # "class": "logging.Formatter",
+                    "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
                     "datefmt": "%Y-%m-%dT%H:%M:%S",
                     # For JsonFormatter, the format string just defines what keys are included in the log record
                     # It's a bit clunky, but it's the way to do it for now
