@@ -15,7 +15,7 @@ async def register(user:UserIn):
             detail = "user already exists"
         )
     
-    query = user_table.insert().value(email = user.email, password = user.password)
+    query = user_table.insert().values(email = user.email, password = user.password)
     logger.debug(query)
 
     await database.execute(query)

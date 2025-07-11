@@ -23,6 +23,7 @@ app.add_middleware(CorrelationIdMiddleware)
 
 
 app.include_router(post_router)
+app.include_router(user_router)
 
 
 @app.exception_handler(HTTPException)
