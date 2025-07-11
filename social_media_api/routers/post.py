@@ -43,7 +43,7 @@ async def get_all_posts():
 async def create_comment(comment: CommentIn):
     post = await find_post(comment.post_id)
     if not post:
-        logger.error(f"post with id {comment.post_id} not found")
+        # logger.error(f"post with id {comment.post_id} not found")
         raise HTTPException(status_code=404, detail="post not found")
     data = comment.model_dump()  # previously .dict()
     query = comment_table.insert().values(data)
@@ -63,7 +63,7 @@ async def get_comment_on_post(post_id: int):
 async def get_post_with_comments(post_id: int):
     post  = await find_post(post_id)
     if not post:
-        logger.error(f"post id {post_id} not found")
+        # logger.error(f"post id {post_id} not found")
         raise HTTPException(status_code=404,detail="post not found")
     return {
         "post" : post,
