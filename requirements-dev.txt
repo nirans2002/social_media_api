@@ -3,5 +3,6 @@ black
 isort
 pytest
 httpx
-lark
-trio
+# lark
+# trio
+pytest-mock
