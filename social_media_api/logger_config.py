@@ -3,6 +3,24 @@ from logging.config import dictConfig
 from social_media_api.config import config, DevConfig
 import logging
 
+
+def obfuscated(email: str, obfuscated_length: int):
+    """Obfuscate email address for logging purposes."""
+    characters = email[:obfuscated_length]
+    first, last = email.split("@")
+    return characters + ("*" * (len(first) - obfuscated_length)) + "@" + last
+
+
+class EmailObfuscationFilter(logging.Filter):
+    def __init__(self, name: str = "", obfuscated_length: int = 2) -> None:
+        super().__init__(name)
+        self.obfuscated_length = obfuscated_length
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if "email" in record.__dict__:
+            record.email = obfuscated(record.email, self.obfuscated_length)
+        return True
+
 def configure_logging() -> None:
     dictConfig(
         {
@@ -13,6 +31,10 @@ def configure_logging() -> None:
                     "()": "asgi_correlation_id.CorrelationIdFilter",
                     "uuid_length": 16 if isinstance(config, DevConfig) else 256,
                     "default_value": "-",
+                },
+                "email_obfuscation": {
+                    "()": EmailObfuscationFilter,
+                    "obfuscated_length": 2 if isinstance(config, DevConfig) else 0,
                 },
             },
             "formatters": {
@@ -36,14 +58,14 @@ def configure_logging() -> None:
                     "class": "rich.logging.RichHandler",  # could use logging.StreamHandler instead
                     "level": "DEBUG",
                     "formatter": "console",
-                    "filters": ["correlation_id"], #, "email_obfuscation"
+                    "filters": ["correlation_id", "email_obfuscation"]
 
                 },
                 "rotating_file": {
                     "class": "logging.handlers.RotatingFileHandler",
                     "level": "DEBUG",
                     "formatter": "file",
-                    "filters": ["correlation_id"], #, "email_obfuscation"
+                    "filters": ["correlation_id","email_obfuscation"], #,
                     "filename": "social_media_api.log",
                     "maxBytes": 1024 * 1024 * 1,  # 1 MB
                     "backupCount": 3,
