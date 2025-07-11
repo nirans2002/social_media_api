@@ -6,9 +6,10 @@ from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from httpx import ASGITransport
 # from httpx import AsyncClient
+os.environ["ENV_STATE"] = "test"
+
 from social_media_api.routers.post import comment_table, post_table
 
-os.environ["ENV_STATE"] = "test"
 from social_media_api.database import database
 from social_media_api.main import app
 
@@ -16,7 +17,7 @@ from social_media_api.main import app
 def anyio_backend():
     return "asyncio"
 
-# test client
+
 @pytest.fixture()
 def client() -> Generator:
     yield TestClient(app)
@@ -24,12 +25,11 @@ def client() -> Generator:
 
 @pytest.fixture(autouse=True)
 async def db() -> AsyncGenerator:
-    # post_table.clear()
-    # comment_table.clear()
-    # yield
     await database.connect()
+    print(f"database : {database.url}")
     yield
     await database.disconnect()
+
 
 @pytest.fixture()
 # @pytest.fixture()

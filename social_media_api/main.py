@@ -14,6 +14,7 @@ async def lifespan(app: FastAPI):
     configure_logging()
     logger.info("application started")
     await database.connect()
+    logger.info(f"database connected {database.url}")
     yield
     await database.disconnect()
 
