@@ -2,13 +2,15 @@ import logging
 from typing import Annotated
 
 from fastapi import Depends, APIRouter, HTTPException, Request
-from social_media_api.database import database,post_table,comment_table
+from social_media_api.database import database,post_table,comment_table, likes_table
 from social_media_api.models.post import (
     UserPost,
     UserPostIn,
     Comment,
     CommentIn,
     UserPostWithComments,
+    PostLike,
+    PostLikeIn
 )
 from social_media_api.models.user import User
 from social_media_api.security import get_current_user,oauth2_scheme
@@ -73,3 +75,21 @@ async def get_post_with_comments(post_id: int):
         "post" : post,
         "comments": await get_comment_on_post(post_id)
     }
+
+
+@router.post("/like",response_model=PostLike, status_code=201)
+async def like_post(
+    like: PostLikeIn,
+    current_user: Annotated[User,Depends(get_current_user)]
+):
+    logger.info("like post")
+    post = await find_post(like.post_id)
+
+    if not post:
+        # logger.error(f"post id {post_id} not found")
+        raise HTTPException(status_code=404,detail="post not found")
+    data = {**like.model_dump(), "user_id": current_user.id}
+    query = likes_table.insert().value(data)
+    logger.debug(query)
+    last_record_id = database.execute(query)
+    return {**data, "id": last_record_id}
