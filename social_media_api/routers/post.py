@@ -89,7 +89,7 @@ async def like_post(
         # logger.error(f"post id {post_id} not found")
         raise HTTPException(status_code=404,detail="post not found")
     data = {**like.model_dump(), "user_id": current_user.id}
-    query = likes_table.insert().value(data)
+    query = likes_table.insert().values(data)
     logger.debug(query)
-    last_record_id = database.execute(query)
+    last_record_id = await database.execute(query)
     return {**data, "id": last_record_id}
