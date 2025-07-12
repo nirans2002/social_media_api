@@ -26,13 +26,12 @@ credentials_exception = HTTPException(
 def access_token_expire_minutes() -> int:
     return 30
 
-
 def create_access_token(email: str):
     logger.debug("create access token", extra={"email": email})
     expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
         minutes=access_token_expire_minutes()
     )
-    jwt_data = {"sub": email, "exp": expire}
+    jwt_data = {"sub": email, "exp": expire, "type": "access"}
     encoded_jwt = jwt.encode(jwt_data, key=SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -68,6 +67,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     try:
         payload = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+        type = payload.get("type")
+        if type is None or type != "access":
+            raise credentials_exception
+
     except ExpiredSignatureError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -80,3 +85,17 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     if user is None:
         raise credentials_exception
     return user
+
+
+def confirm_token_expire_minutes() -> int:
+    return 1440
+
+
+def create_confirm_token(email: str):
+    logger.debug("create access token", extra={"email": email})
+    expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+        minutes=confirm_token_expire_minutes()
+    )
+    jwt_data = {"sub": email, "exp": expire, "type": "confirmation"}
+    encoded_jwt = jwt.encode(jwt_data, key=SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
