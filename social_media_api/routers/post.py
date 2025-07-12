@@ -1,6 +1,7 @@
 import logging
 from typing import Annotated
 import sqlalchemy
+from enum import Enum
 from fastapi import Depends, APIRouter, HTTPException, Request
 from social_media_api.database import database,post_table,comment_table, likes_table
 from social_media_api.models.post import (
@@ -9,6 +10,7 @@ from social_media_api.models.post import (
     Comment,
     CommentIn,
     UserPostWithComments,
+    UserPostWithLikes,
     PostLike,
     PostLikeIn
 )
@@ -28,6 +30,11 @@ select_post_and_likes = (
     .group_by(post_table.c.id)
 )
 
+class PostSorting(str, Enum):
+    new = "new"
+    old = "old"
+    most_likes = "most_likes"
+
 
 async def find_post(post_id: int):
     query = post_table.select().where(post_table.c.id==post_id)
@@ -44,9 +51,14 @@ async def create_post(post: UserPostIn, current_user: Annotated[User,Depends(get
 
 
 # get all posts
-@router.get("/posts", response_model=list[UserPost])
-async def get_all_posts():
-    query = post_table.select()
+@router.get("/posts", response_model=list[UserPostWithLikes])
+async def get_all_posts(sorting : PostSorting = PostSorting.new):
+    if sorting == PostSorting.new:
+        query = select_post_and_likes.order_by(post_table.c.id.desc())
+    if sorting == PostSorting.old:
+        query = select_post_and_likes.order_by(post_table.c.id.asc())
+    if sorting == PostSorting.most_likes:
+        query = select_post_and_likes.order_by(sqlalchemy.desc("likes"))
     logger.debug(query)
     return await database.fetch_all(query)
 

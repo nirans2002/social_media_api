@@ -89,7 +89,7 @@ async def test_create_post_missing_data(
 async def test_get_all_posts(async_client: AsyncClient, created_post: dict):
     response = await async_client.get("/posts")
     assert response.status_code == 200
-    assert response.json() == [created_post]
+    assert created_post.items() <= response.json()[0].items()
 
 
 @pytest.mark.anyio
@@ -177,4 +177,44 @@ async def test_like_post(
     )
     assert response.status_code == 201
 
-# @pytest.mark.anyio
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "sorting, expected_order",
+    [
+        ("new", [2, 1]),
+        ("old", [1, 2]),
+    ],
+)
+async def test_get_all_posts_sorting(
+    async_client: AsyncClient,
+    logged_in_token: str,
+    sorting: str,
+    expected_order: list[int],
+):
+    await create_post("Test Post 1", async_client, logged_in_token)
+    await create_post("Test Post 2", async_client, logged_in_token)
+    response = await async_client.get("/posts", params={"sorting": sorting})
+    assert response.status_code == 200
+
+    data = response.json()
+    post_ids = [post["id"] for post in data]
+    assert post_ids == expected_order
+
+@pytest.mark.anyio
+async def test_get_all_posts_sort_likes(
+    async_client: AsyncClient, logged_in_token: str
+):
+    await create_post("Test Post 1", async_client, logged_in_token)
+    await create_post("Test Post 2", async_client, logged_in_token)
+    await like_post(2, async_client, logged_in_token)
+    response = await async_client.get("/posts", params={"sorting": "most_likes"})
+    assert response.status_code == 200
+    data = response.json()
+    assert [post["id"] for post in data] == [2, 1]
+
+
+@pytest.mark.anyio
+async def test_get_all_post_wrong_sorting(async_client: AsyncClient):
+    response = await async_client.get("/posts", params={"sorting": "wrong"})
+    assert response.status_code == 422
