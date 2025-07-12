@@ -1,6 +1,6 @@
 import logging
 from typing import Annotated
-
+import sqlalchemy
 from fastapi import Depends, APIRouter, HTTPException, Request
 from social_media_api.database import database,post_table,comment_table, likes_table
 from social_media_api.models.post import (
@@ -20,6 +20,13 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 # post_table = {}
 # comment_table = {}
+
+
+select_post_and_likes = (
+    sqlalchemy.select(post_table, sqlalchemy.func.count(likes_table.c.id).label("likes"))
+    .select_from(post_table.outerjoin(likes_table))
+    .group_by(post_table.c.id)
+)
 
 
 async def find_post(post_id: int):
@@ -67,7 +74,9 @@ async def get_comment_on_post(post_id: int):
 # get post with comments
 @router.get("/post/{post_id}", response_model=UserPostWithComments)
 async def get_post_with_comments(post_id: int):
-    post  = await find_post(post_id)
+    # post  = await find_post(post_id)
+    query = select_post_and_likes.where(post_table.c.id == post_id)
+    post =  await database.fetch_one(query)
     if not post:
         # logger.error(f"post id {post_id} not found")
         raise HTTPException(status_code=404,detail="post not found")

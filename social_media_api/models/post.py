@@ -16,12 +16,16 @@ class Comment(CommentIn):
     model_config = ConfigDict(from_attributes=True)
     user_id: int
     id: int
+class UserPostWithLikes(UserPost):
+    model_config = ConfigDict(from_attributes=True)
+    likes: int
 
 class UserPostWithComments(BaseModel):
-    post : UserPost
+    post : UserPostWithLikes
     comments: list[Comment]
 
 
+    
 class PostLikeIn(BaseModel):
     post_id : int
 
