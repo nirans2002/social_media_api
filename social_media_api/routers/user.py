@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Form, Depends,Request
 from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm
 from social_media_api.models.user import UserIn
+from social_media_api import tasks
 from social_media_api.security import authenticate_user, get_user,get_password_hash,create_access_token,get_subject_for_token_type,create_confirm_token
 from social_media_api.database import user_table,database
 import logging
@@ -21,6 +22,11 @@ async def register(user:UserIn,request:Request):
     logger.debug(query)
 
     await database.execute(query)
+    await tasks.send_user_registration_email(
+        user.email, confirmation_url= request.url_for(
+            "confirm_email", token=create_confirm_token(user.email)
+        ),
+    )
     return {
         "detail": "User created. Please confirm your email.",
         "confirmation_url": request.url_for(

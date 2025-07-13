@@ -1,7 +1,7 @@
 from httpx import AsyncClient
 import pytest
 from fastapi import Request
-
+from social_media_api import tasks
 async def register_user(async_client : AsyncClient,email:str,password:str):
     return await async_client.post("/register", json={
         "email":email, "password":password
@@ -43,13 +43,13 @@ async def test_login_user(async_client: AsyncClient, confirmed_user: dict):
 
 @pytest.mark.anyio
 async def test_confirm_user(async_client: AsyncClient, mocker):
-    spy = mocker.spy(Request, "url_for")
+    spy = mocker.spy(tasks, "send_user_registration_email")
     await register_user(async_client, "test@example.net", "1234")
 
     # We only call Request.url_for once, so this is OK.
     # This is not a scalable solution.
     # A better solution will be discussed in the next couple lectures.
-    confirmation_url = str(spy.spy_return)
+    confirmation_url = str(spy.call_args[1]["confirmation_url"])
     response = await async_client.get(confirmation_url)
 
     assert response.status_code == 200
@@ -66,10 +66,10 @@ async def test_confirm_user_invalid_token(async_client: AsyncClient):
 @pytest.mark.anyio
 async def test_confirm_user_expired_token(async_client: AsyncClient, mocker):
     mocker.patch("social_media_api.security.confirm_token_expire_minutes", return_value=-1)
-    spy = mocker.spy(Request, "url_for")
+    spy = mocker.spy(tasks, "send_user_registration_email")
     await register_user(async_client, "test@example.net", "1234")
 
-    confirmation_url = str(spy.spy_return)
+    confirmation_url = str(spy.call_args[1]["confirmation_url"])
     response = await async_client.get(confirmation_url)
 
     assert response.status_code == 401
