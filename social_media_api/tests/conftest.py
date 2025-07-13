@@ -67,17 +67,17 @@ async def confirmed_user(registered_user: dict) -> dict:
 
 
 
-# @pytest.fixture(autouse=True)
-# def mock_httpx_client(mocker):
-#     """
-#     Fixture to mock the HTTPX client so that we never make any
-#     real HTTP requests (especially important when registering users).
-#     """
-#     mocked_client = mocker.patch("social_media_api.tasks.httpx.AsyncClient")
+@pytest.fixture(autouse=True)
+def mock_httpx_client(mocker):
+    """
+    Fixture to mock the HTTPX client so that we never make any
+    real HTTP requests (especially important when registering users).
+    """
+    mocked_client = mocker.patch("social_media_api.tasks.httpx.AsyncClient")
 
-#     mocked_async_client = Mock()
-#     response = Response(status_code=200, content="", request=Request("POST", "//"))
-#     mocked_async_client.post = AsyncMock(return_value=response)
-#     mocked_client.return_value.__aenter__.return_value = mocked_async_client
+    mocked_async_client = Mock()
+    response = Response(status_code=200, content="", request=Request("POST", "//"))
+    mocked_async_client.post = AsyncMock(return_value=response)
+    mocked_client.return_value.__aenter__.return_value = mocked_async_client
 
-#     return mocked_async_client
+    return mocked_async_client
