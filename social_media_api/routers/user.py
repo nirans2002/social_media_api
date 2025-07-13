@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException, status, Form, Depends
+from fastapi import APIRouter, HTTPException, status, Form, Depends,Request
 from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm
 from social_media_api.models.user import UserIn
-from social_media_api.security import authenticate_user, get_user,get_password_hash,create_access_token
+from social_media_api.security import authenticate_user, get_user,get_password_hash,create_access_token,get_subject_for_token_type,create_confirm_token
 from social_media_api.database import user_table,database
 import logging
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/register",status_code=201)
-async def register(user:UserIn):
+async def register(user:UserIn,request:Request):
     if await get_user(user.email):
         raise HTTPException(
             status_code = status.HTTP_400_BAD_REQUEST,
@@ -21,7 +21,13 @@ async def register(user:UserIn):
     logger.debug(query)
 
     await database.execute(query)
-    return {"detail":"user created"}
+    return {
+        "detail": "User created. Please confirm your email.",
+        "confirmation_url": request.url_for(
+            "confirm_email", token=create_confirm_token(user.email)
+        ),
+    }
+
 
 
 # @router.post("/token")
@@ -46,3 +52,15 @@ async def login(user:UserIn):
      }
 
 
+
+@router.get("/confirm/{token}")
+async def confirm_email(token: str):
+    email = get_subject_for_token_type(token, "confirmation")
+    query = (
+        user_table.update().where(user_table.c.email == email).values(confirmed=True)
+    )
+
+    logger.debug(query)
+
+    await database.execute(query)
+    return {"detail": "User confirmed"}
