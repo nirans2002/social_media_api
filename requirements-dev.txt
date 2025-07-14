@@ -6,3 +6,4 @@ httpx
 # lark
 # trio
 pytest-mock
+pyfakefs
