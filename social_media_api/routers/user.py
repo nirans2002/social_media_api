@@ -22,7 +22,7 @@ async def register(user:UserIn,request:Request,background_tasks:BackgroundTasks)
     logger.debug(query)
 
     await database.execute(query)
-    await background_tasks.add_task(
+    background_tasks.add_task(
         tasks.send_user_registration_email,
         user.email, confirmation_url= request.url_for(
             "confirm_email", token=create_confirm_token(user.email)
